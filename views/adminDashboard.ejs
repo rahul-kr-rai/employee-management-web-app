@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Admin Dashboard — EMS</title>
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/dashboard/dean" class="nav-brand"><div class="brand-icon">E</div><span class="brand-name">EMS</span></a>
+  <div class="nav-links">
+    <a href="/dashboard/dean" class="nav-link active" id="nav-dash">🏠 Dashboard</a>
+    <a href="/employees"      class="nav-link" id="nav-emp">👥 Employees</a>
+    <a href="/departments"    class="nav-link" id="nav-dept">🏢 Departments</a>
+    <a href="/attendance"     class="nav-link" id="nav-att">📅 Attendance</a>
+    <a href="/leaves"         class="nav-link" id="nav-leaves">🌴 Leaves</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+    <a href="/employees/export" class="btn btn-secondary btn-sm no-print" id="export-btn">📤 Export</a>
+    <button id="themeToggle" class="theme-toggle-btn" title="Toggle dark mode">🌙</button>
+    <button id="hamburger" class="hamburger-btn" aria-expanded="false"><span></span><span></span><span></span></button>
+    <form action="/logout" method="POST">
+      <button type="submit" class="btn btn-secondary btn-sm" id="logout-btn">Logout</button>
+    </form>
+  </div>
+</nav>
+
+<div id="mobileNav" class="mobile-nav">
+  <a href="/dashboard/dean">🏠 Dashboard</a>
+  <a href="/employees">👥 Employees</a>
+  <a href="/departments">🏢 Departments</a>
+  <a href="/attendance">📅 Attendance</a>
+  <a href="/leaves">🌴 Leave Requests</a>
+  <div class="mobile-divider"></div>
+  <a href="/employees/export">📤 Export CSV</a>
+  <form action="/logout" method="POST">
+    <button type="submit" class="btn btn-secondary btn-sm" style="width:100%;margin-top:6px;">Logout</button>
+  </form>
+</div>
+
+<div class="main-content">
+  <div class="page-wrapper">
+
+    <div class="page-header animate-in" style="margin-bottom:28px;">
+      <div>
+        <h1 style="font-size:1.8rem;">🎓 Dean Dashboard</h1>
+        <p style="color:var(--text-muted);margin-top:4px;">Welcome back! Here's your institution at a glance.</p>
+      </div>
+      <span style="font-size:0.8rem;color:var(--text-muted);background:var(--bg-secondary);padding:6px 12px;border-radius:20px;border:1px solid var(--border);">
+        <%= new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) %>
+      </span>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="grid grid-3 animate-in delay-1" style="margin-bottom:28px;">
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-value"><%= totalEmployees %></div>
+        <div class="stat-label">Total Employees</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🏢</div>
+        <div class="stat-value"><%= totalDepartments %></div>
+        <div class="stat-label">Departments</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value"><%= activeEmployees %></div>
+        <div class="stat-label">Active Staff</div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="animate-in delay-2" style="margin-bottom:28px;">
+      <p class="section-title">Quick Actions</p>
+      <div class="grid grid-4">
+        <a href="/employees"  class="card" style="text-decoration:none;text-align:center;padding:20px;" id="qa-emp-btn"><div style="font-size:1.6rem;margin-bottom:8px;">👥</div><div style="font-weight:600;font-size:0.875rem;">Employees</div></a>
+        <a href="/departments" class="card" style="text-decoration:none;text-align:center;padding:20px;" id="qa-dept-btn"><div style="font-size:1.6rem;margin-bottom:8px;">🏢</div><div style="font-weight:600;font-size:0.875rem;">Departments</div></a>
+        <a href="/attendance"  class="card" style="text-decoration:none;text-align:center;padding:20px;" id="qa-att-btn"><div style="font-size:1.6rem;margin-bottom:8px;">📅</div><div style="font-weight:600;font-size:0.875rem;">Attendance</div></a>
+        <a href="/leaves"      class="card" style="text-decoration:none;text-align:center;padding:20px;" id="qa-leave-btn"><div style="font-size:1.6rem;margin-bottom:8px;">🌴</div><div style="font-weight:600;font-size:0.875rem;">Leave Mgmt</div></a>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-2 animate-in delay-2" style="margin-bottom:28px;">
+      <!-- Dept Headcount Bar Chart -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">👥 Employees by Department</h3>
+        </div>
+        <canvas id="deptChart" height="200"></canvas>
+      </div>
+      <!-- Attendance Doughnut -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">📅 Attendance This Month</h3>
+          <span style="font-size:0.75rem;color:var(--text-muted);"><%= chartData.monthName %></span>
+        </div>
+        <div style="max-width:240px;margin:0 auto;">
+          <canvas id="attChart" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Role Distribution + Recent Employees -->
+    <div class="grid grid-2 animate-in delay-3">
+      <!-- Role Pie -->
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">🎭 Role Distribution</h3></div>
+        <div style="max-width:220px;margin:0 auto;">
+          <canvas id="roleChart" height="180"></canvas>
+        </div>
+      </div>
+      <!-- Recent Employees -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">🕐 Recent Employees</h3>
+          <a href="/employees" class="btn btn-secondary btn-sm" id="view-all-btn">View All</a>
+        </div>
+        <% if (recentEmployees.length === 0) { %>
+          <div class="empty-state"><div class="empty-icon">👤</div><p>No employees yet.</p></div>
+        <% } else { %>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <% recentEmployees.forEach((emp, i) => { %>
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-secondary);border-radius:var(--radius-sm);" class="animate-in delay-<%= (i%4)+1 %>">
+                <div style="width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;flex-shrink:0;color:#fff;"><%= emp.name.charAt(0).toUpperCase() %></div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-weight:600;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= emp.name %></div>
+                  <div style="font-size:0.75rem;color:var(--text-muted);"><%= emp.department %></div>
+                </div>
+                <span class="badge badge-purple" style="font-size:0.7rem;"><%= (emp.role||'').toUpperCase() %></span>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/app.js"></script>
+<script>
+  (function() {
+    const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+    const gridColor  = () => isDark() ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    const labelColor = () => isDark() ? '#94a3b8' : '#64748b';
+
+    const deptLabels = <%- chartData.deptLabels %>;
+    const deptCounts = <%- chartData.deptCounts %>;
+    const roleLabels = <%- chartData.roleLabels %>;
+    const roleCounts = <%- chartData.roleCounts %>;
+    const att        = <%- chartData.attSummary %>;
+
+    const COLORS = ['#6366f1','#4f46e5','#7c3aed','#0ea5e9','#06b6d4','#10b981','#f59e0b','#ef4444'];
+
+    // Dept bar chart
+    const deptCtx = document.getElementById('deptChart').getContext('2d');
+    new Chart(deptCtx, {
+      type: 'bar',
+      data: { labels: deptLabels, datasets: [{ label: 'Employees', data: deptCounts, backgroundColor: COLORS, borderRadius: 6, borderSkipped: false }] },
+      options: {
+        responsive: true, plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1, color: labelColor() }, grid: { color: gridColor() } },
+          x: { ticks: { color: labelColor(), maxRotation: 30 }, grid: { display: false } }
+        }
+      }
+    });
+
+    // Attendance doughnut
+    const attCtx = document.getElementById('attChart').getContext('2d');
+    new Chart(attCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Present','Late','Absent'],
+        datasets: [{ data: [att.Present, att.Late, att.Absent], backgroundColor: ['#10b981','#f59e0b','#ef4444'], borderWidth: 2, borderColor: isDark() ? '#1c1f2e' : '#fff' }]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: labelColor(), padding: 12, font: { size: 11 } } } }, cutout: '65%' }
+    });
+
+    // Role pie
+    const roleCtx = document.getElementById('roleChart').getContext('2d');
+    new Chart(roleCtx, {
+      type: 'pie',
+      data: { labels: roleLabels, datasets: [{ data: roleCounts, backgroundColor: ['#6366f1','#10b981','#f59e0b'], borderWidth: 2, borderColor: isDark() ? '#1c1f2e' : '#fff' }] },
+      options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: labelColor(), padding: 12, font: { size: 11 } } } } }
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>My Attendance — EMS</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/dashboard/user" class="nav-brand">
+    <div class="brand-icon">E</div>
+    <span class="brand-name">EMS</span>
+  </a>
+  <div class="nav-links">
+    <a href="/dashboard/user" class="nav-link" id="nav-dashboard">🏠 Dashboard</a>
+    <a href="/attendance/my"  class="nav-link active" id="nav-myatt">📅 My Attendance</a>
+    <a href="/leaves"         class="nav-link" id="nav-leaves">🌴 Leaves</a>
+    <a href="/change-password" class="nav-link" id="nav-chgpwd">🔑 Password</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
+    <button id="themeToggle" class="theme-toggle-btn" title="Toggle dark mode">🌙</button>
+    <button id="hamburger" class="hamburger-btn" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <form action="/logout" method="POST" class="no-print">
+      <button type="submit" class="btn btn-secondary btn-sm" id="logout-btn">Logout</button>
+    </form>
+  </div>
+</nav>
+
+<div id="mobileNav" class="mobile-nav">
+  <a href="/dashboard/user">🏠 Dashboard</a>
+  <a href="/attendance/my">📅 My Attendance</a>
+  <a href="/leaves">🌴 Leave Requests</a>
+  <a href="/change-password">🔑 Change Password</a>
+  <div class="mobile-divider"></div>
+  <form action="/logout" method="POST">
+    <button type="submit" class="btn btn-secondary btn-sm" style="width:100%;">Logout</button>
+  </form>
+</div>
+
+<div class="main-content">
+  <div class="page-wrapper">
+
+    <div class="page-header animate-in" style="margin-bottom:28px;">
+      <div>
+        <h1 style="font-size:1.7rem;">📅 My Attendance</h1>
+        <p style="color:var(--text-muted);margin-top:4px;"><%= employee.name %> — <%= employee.employeeId %></p>
+      </div>
+      <a href="/dashboard/user" class="btn btn-secondary no-print" id="back-btn">← Back</a>
+    </div>
+
+    <!-- Monthly Summary Cards -->
+    <div class="card animate-in delay-1" style="margin-bottom:24px;">
+      <div class="card-header">
+        <h3 class="card-title">📊 <%= monthName %> Summary</h3>
+        <span class="badge badge-purple"><%= monthStats.total %> day<%= monthStats.total !== 1 ? 's' : '' %> marked</span>
+      </div>
+      <div class="att-stat-grid">
+        <div class="att-stat">
+          <div class="att-num" style="color:var(--success);"><%= monthStats.present %></div>
+          <div class="att-label">Present</div>
+        </div>
+        <div class="att-stat">
+          <div class="att-num" style="color:var(--warning);"><%= monthStats.late %></div>
+          <div class="att-label">Late</div>
+        </div>
+        <div class="att-stat">
+          <div class="att-num" style="color:var(--danger);"><%= monthStats.absent %></div>
+          <div class="att-label">Absent</div>
+        </div>
+        <div class="att-stat">
+          <div class="att-num" style="color:var(--accent);">
+            <%= monthStats.total > 0 ? Math.round((monthStats.present + monthStats.late * 0.5) / monthStats.total * 100) : 0 %>%
+          </div>
+          <div class="att-label">Attendance %</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance Records -->
+    <div class="card animate-in delay-2">
+      <div class="card-header">
+        <h3 class="card-title">📋 All Records</h3>
+        <span class="badge badge-purple"><%= attendance.length %> records</span>
+      </div>
+      <% if (attendance.length === 0) { %>
+        <div class="empty-state">
+          <div class="empty-icon">📅</div>
+          <p>No attendance records found.</p>
+        </div>
+      <% } else { %>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>#</th><th>Date</th><th>Day</th><th>Status</th></tr></thead>
+            <tbody>
+              <% attendance.forEach((rec, i) => { %>
+                <tr>
+                  <td style="color:var(--text-muted);font-size:0.8rem;"><%= (page-1)*20 + i + 1 %></td>
+                  <td style="font-weight:500;"><%= new Date(rec.date).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}) %></td>
+                  <td style="color:var(--text-muted);"><%= new Date(rec.date).toLocaleDateString('en-IN',{weekday:'long'}) %></td>
+                  <td>
+                    <% if (rec.status === 'Present') { %>
+                      <span class="badge badge-green">✓ Present</span>
+                    <% } else if (rec.status === 'Late') { %>
+                      <span class="badge badge-late">⏰ Late</span>
+                    <% } else { %>
+                      <span class="badge badge-red">✗ Absent</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+
+        <% if (totalPages > 1) { %>
+          <div class="pagination no-print">
+            <a href="/attendance/my?page=<%= page > 1 ? page - 1 : 1 %>" id="prevPageBtn">← Prev</a>
+            <span style="flex:1;text-align:center;font-size:0.8rem;color:var(--text-muted);">Page <%= page %> of <%= totalPages %></span>
+            <a href="/attendance/my?page=<%= page < totalPages ? page + 1 : totalPages %>" id="nextPageBtn">Next →</a>
+          </div>
+        <% } %>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

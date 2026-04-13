@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>My Dashboard — EMS</title>
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/dashboard/user" class="nav-brand"><div class="brand-icon">E</div><span class="brand-name">EMS</span></a>
+  <div class="nav-links">
+    <a href="/dashboard/user"  class="nav-link active" id="nav-dash">🏠 Dashboard</a>
+    <a href="/attendance/my"   class="nav-link" id="nav-myatt">📅 My Attendance</a>
+    <a href="/leaves"          class="nav-link" id="nav-leaves">🌴 Leaves</a>
+    <a href="/change-password" class="nav-link" id="nav-pwd">🔑 Password</a>
+    <% if (employee.role === 'hod') { %>
+      <a href="/departments"   class="nav-link" id="nav-dept">🏢 Departments</a>
+      <a href="/attendance"    class="nav-link" id="nav-att">📅 Attendance</a>
+    <% } %>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+    <button id="themeToggle" class="theme-toggle-btn" title="Toggle dark mode">🌙</button>
+    <button id="hamburger" class="hamburger-btn" aria-expanded="false"><span></span><span></span><span></span></button>
+    <form action="/logout" method="POST">
+      <button type="submit" class="btn btn-secondary btn-sm" id="logout-btn">Logout</button>
+    </form>
+  </div>
+</nav>
+
+<div id="mobileNav" class="mobile-nav">
+  <a href="/dashboard/user">🏠 Dashboard</a>
+  <a href="/attendance/my">📅 My Attendance</a>
+  <a href="/leaves">🌴 Leave Requests</a>
+  <a href="/change-password">🔑 Change Password</a>
+  <% if (employee.role === 'hod') { %>
+    <a href="/departments">🏢 Departments</a>
+    <a href="/attendance">📅 All Attendance</a>
+  <% } %>
+  <div class="mobile-divider"></div>
+  <form action="/logout" method="POST">
+    <button type="submit" class="btn btn-secondary btn-sm" style="width:100%;">Logout</button>
+  </form>
+</div>
+
+<div class="main-content">
+  <div class="page-wrapper">
+
+    <div class="page-header animate-in" style="margin-bottom:28px;">
+      <div>
+        <h1 style="font-size:1.8rem;">👋 Welcome, <%= employee.name.split(' ')[0] %>!</h1>
+        <p style="color:var(--text-muted);margin-top:4px;"><%= employee.employeeId %> · <%= (employee.role||'').toUpperCase() %> · <%= employee.department %></p>
+      </div>
+      <span style="font-size:0.8rem;color:var(--text-muted);background:var(--bg-secondary);padding:6px 12px;border-radius:20px;border:1px solid var(--border);">
+        <%= new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'}) %>
+      </span>
+    </div>
+
+    <!-- Attendance Stats This Month -->
+    <div class="card animate-in delay-1" style="margin-bottom:24px;">
+      <div class="card-header">
+        <h3 class="card-title">📊 <%= attendanceStats.monthName %> Attendance</h3>
+        <a href="/attendance/my" class="btn btn-secondary btn-sm" id="view-att-btn">View Details →</a>
+      </div>
+      <div class="att-stat-grid">
+        <div class="att-stat">
+          <div class="att-num" style="color:var(--success);"><%= attendanceStats.present %></div>
+          <div class="att-label">Present</div>
+        </div>
+        <div class="att-stat">
+          <div class="att-num" style="color:var(--warning);"><%= attendanceStats.late %></div>
+          <div class="att-label">Late</div>
+        </div>
+        <div class="att-stat">
+          <div class="att-num" style="color:var(--danger);"><%= attendanceStats.absent %></div>
+          <div class="att-label">Absent</div>
+        </div>
+        <div class="att-stat">
+          <div class="att-num" style="color:var(--accent);">
+            <%= attendanceStats.total > 0 ? Math.round((attendanceStats.present + attendanceStats.late * 0.5) / attendanceStats.total * 100) : 0 %>%
+          </div>
+          <div class="att-label">Attendance %</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile + Quick Actions side by side -->
+    <div class="grid grid-2 animate-in delay-2">
+      <!-- Profile Card -->
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">👤 My Profile</h3></div>
+        <div style="display:flex;flex-direction:column;gap:0;">
+          <% const fields = [['Employee ID', employee.employeeId], ['Full Name', employee.name], ['Email', employee.email], ['Phone', employee.phone || 'N/A'], ['Department', employee.department], ['Position', employee.position || 'N/A'], ['Salary', employee.salary ? '₹' + Number(employee.salary).toLocaleString('en-IN') : 'N/A'], ['Join Date', new Date(employee.joinDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})]]; %>
+          <% fields.forEach(([label, val]) => { %>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+              <span style="font-size:0.8rem;color:var(--text-muted);font-weight:500;"><%= label %></span>
+              <span style="font-size:0.875rem;font-weight:600;color:var(--text-primary);text-align:right;max-width:55%;"><%= val %></span>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">⚡ Quick Access</h3></div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <a href="/attendance/my" id="qa-myatt" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--bg-secondary);border-radius:var(--radius-md);text-decoration:none;border:1px solid var(--border);transition:all 0.2s;">
+            <span style="font-size:1.4rem;">📅</span>
+            <div><div style="font-weight:600;font-size:0.9rem;color:var(--text-primary);">My Attendance</div><div style="font-size:0.78rem;color:var(--text-muted);">View your full attendance history</div></div>
+          </a>
+          <a href="/leaves" id="qa-leaves" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--bg-secondary);border-radius:var(--radius-md);text-decoration:none;border:1px solid var(--border);transition:all 0.2s;">
+            <span style="font-size:1.4rem;">🌴</span>
+            <div><div style="font-weight:600;font-size:0.9rem;color:var(--text-primary);">Leave Requests</div><div style="font-size:0.78rem;color:var(--text-muted);">Apply for & track leave</div></div>
+          </a>
+          <a href="/employees/salary-slip/<%= employee._id %>" id="qa-slip" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--bg-secondary);border-radius:var(--radius-md);text-decoration:none;border:1px solid var(--border);transition:all 0.2s;">
+            <span style="font-size:1.4rem;">💰</span>
+            <div><div style="font-weight:600;font-size:0.9rem;color:var(--text-primary);">Salary Slip</div><div style="font-size:0.78rem;color:var(--text-muted);">View & print payslip</div></div>
+          </a>
+          <a href="/change-password" id="qa-pwd" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--bg-secondary);border-radius:var(--radius-md);text-decoration:none;border:1px solid var(--border);transition:all 0.2s;">
+            <span style="font-size:1.4rem;">🔑</span>
+            <div><div style="font-weight:600;font-size:0.9rem;color:var(--text-primary);">Change Password</div><div style="font-size:0.78rem;color:var(--text-muted);">Update your credentials</div></div>
+          </a>
+          <% if (employee.role === 'hod') { %>
+            <a href="/departments" id="qa-dept" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--bg-secondary);border-radius:var(--radius-md);text-decoration:none;border:1px solid var(--border);transition:all 0.2s;">
+              <span style="font-size:1.4rem;">🏢</span>
+              <div><div style="font-weight:600;font-size:0.9rem;color:var(--text-primary);">My Department</div><div style="font-size:0.78rem;color:var(--text-muted);">Manage your department</div></div>
+            </a>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

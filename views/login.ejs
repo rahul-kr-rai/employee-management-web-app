@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sign in to EMS – Employee Management System">
+  <title>Sign In — EMS</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: var(--bg-primary);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Ambient blobs */
+    body::before {
+      content: '';
+      position: fixed;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
+      top: -150px; left: -100px;
+      pointer-events: none;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(79,70,229,0.06) 0%, transparent 70%);
+      bottom: -100px; right: -80px;
+      pointer-events: none;
+    }
+
+    .login-wrapper {
+      width: 100%;
+      max-width: 420px;
+      position: relative;
+      z-index: 1;
+      animation: fadeInUp 0.5s ease both;
+    }
+
+    .login-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 44px 40px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Top accent line */
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+    }
+
+    .login-brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 36px;
+      gap: 12px;
+    }
+
+    .login-logo {
+      width: 64px; height: 64px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #fff;
+      box-shadow: 0 8px 30px var(--accent-glow);
+    }
+
+    .login-brand h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+    .login-brand p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* Floating label inputs */
+    .float-group {
+      position: relative;
+      margin-bottom: 20px;
+    }
+    .float-group input {
+      padding: 18px 16px 8px;
+      height: 56px;
+    }
+    .float-group label {
+      position: absolute;
+      top: 50%; left: 16px;
+      transform: translateY(-50%);
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      pointer-events: none;
+      transition: all 0.2s ease;
+      text-transform: none;
+      letter-spacing: 0;
+      background: transparent;
+      margin: 0;
+    }
+    .float-group input:focus + label,
+    .float-group input:not(:placeholder-shown) + label {
+      top: 10px;
+      transform: translateY(0);
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .input-icon-wrapper {
+      position: relative;
+    }
+    .input-icon {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 1rem;
+      pointer-events: none;
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 18px var(--accent-glow);
+      margin-top: 8px;
+    }
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px var(--accent-glow);
+    }
+    .btn-login:active { transform: translateY(0); }
+
+    .login-footer {
+      text-align: center;
+      margin-top: 24px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+    .login-footer a { color: var(--accent-light); text-decoration: none; }
+    .login-footer a:hover { text-decoration: underline; }
+
+    /* Roles pill row */
+    .roles-hint {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+    .role-pill {
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.73rem;
+      font-weight: 600;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    /* Back link */
+    .back-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 24px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.82rem;
+    }
+    .back-link:hover { color: var(--text-primary); }
+
+    @media (max-width: 480px) {
+      .login-card { padding: 32px 24px; border-radius: var(--radius-lg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-wrapper">
+    <a href="/" class="back-link">&larr; Back to Home</a>
+
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="login-logo">E</div>
+        <h1>Welcome Back</h1>
+        <p>Sign in to your EMS account</p>
+      </div>
+
+      <div class="roles-hint">
+        <span class="role-pill">Dean</span>
+        <span class="role-pill">HOD</span>
+        <span class="role-pill">Faculty</span>
+      </div>
+
+      <% if (typeof error !== 'undefined') { %>
+        <div class="alert alert-error" role="alert">
+          <span>⚠</span>
+          <%= error %>
+        </div>
+      <% } %>
+
+      <form action="/login" method="POST" id="loginForm">
+        <div class="float-group">
+          <div class="input-icon-wrapper">
+            <input type="text" name="employeeId" id="employeeId" placeholder=" " required autocomplete="username">
+            <span class="input-icon">🪪</span>
+          </div>
+          <label for="employeeId">Employee ID</label>
+        </div>
+
+        <div class="float-group">
+          <div class="input-icon-wrapper">
+            <input type="password" name="password" id="password" placeholder=" " required autocomplete="current-password">
+            <span class="input-icon">🔒</span>
+          </div>
+          <label for="password">Password</label>
+        </div>
+
+        <button type="submit" class="btn-login" id="loginSubmitBtn">Sign In</button>
+      </form>
+
+      <div class="login-footer">
+        <a href="#" id="forgotPasswordLink">Forgot your password?</a>
+        &nbsp;&bull;&nbsp; Employee Management System &copy; 2026
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

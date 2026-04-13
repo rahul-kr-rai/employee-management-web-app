@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="EMS – A modern Employee Management System for universities. Manage departments, attendance, salaries and more from one dashboard.">
+  <title>EMS — Employee Management System</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    /* ===== Landing-specific styles ===== */
+    body { margin: 0; }
+
+    /* Hero */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 100px 24px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Ambient glow blobs */
+    .hero::before {
+      content: '';
+      position: absolute;
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(99,102,241,0.10) 0%, transparent 70%);
+      top: -120px; left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(79,70,229,0.08) 0%, transparent 70%);
+      bottom: -80px; right: 10%;
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(99,102,241,0.12);
+      border: 1px solid rgba(99,102,241,0.3);
+      color: var(--accent-light);
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 28px;
+      letter-spacing: 0.03em;
+      animation: fadeInUp 0.5s ease both;
+    }
+    .badge-dot {
+      width: 7px; height: 7px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.7); }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.4rem, 6vw, 4.2rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+      animation: fadeInUp 0.5s 0.1s ease both;
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--accent-light), var(--accent-dark));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      max-width: 600px;
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+      line-height: 1.7;
+      animation: fadeInUp 0.5s 0.2s ease both;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeInUp 0.5s 0.3s ease both;
+    }
+
+    /* Floating stat pills */
+    .hero-stats {
+      display: flex;
+      gap: 32px;
+      margin-top: 64px;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeInUp 0.5s 0.4s ease both;
+    }
+    .hero-stat {
+      text-align: center;
+    }
+    .hero-stat .value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+    .hero-stat .label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .hero-stat-divider {
+      width: 1px;
+      background: var(--border);
+      align-self: stretch;
+    }
+
+    /* Features */
+    .features-section {
+      padding: 100px 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .section-label {
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 14px;
+    }
+    .section-heading {
+      text-align: center;
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      font-weight: 800;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+    .section-subheading {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 1rem;
+      margin-bottom: 56px;
+      max-width: 520px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 28px;
+      transition: all var(--transition-slow);
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+      transform: scaleX(0);
+      transition: transform var(--transition-slow);
+      transform-origin: left;
+    }
+    .feature-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); border-color: rgba(99,102,241,0.25); }
+    .feature-card:hover::after { transform: scaleX(1); }
+
+    .feature-icon {
+      width: 46px; height: 46px;
+      border-radius: var(--radius-sm);
+      background: rgba(99,102,241,0.12);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      margin-bottom: 16px;
+    }
+    .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; }
+
+    /* Navbar overrides for landing */
+    .landing-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--nav-height);
+      background: rgba(248,250,252,0.90);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      padding: 0 36px;
+      justify-content: space-between;
+    }
+    .nav-center { color: var(--text-muted); font-size: 0.875rem; font-weight: 500; }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="landing-nav">
+    <div class="nav-brand" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+      <div class="brand-icon">E</div>
+      <span style="font-weight:700;font-size:1rem;color:var(--text-primary);">EMS</span>
+    </div>
+    <span class="nav-center">Employee Management System</span>
+    <a href="/login" class="btn btn-primary" id="nav-login-btn">Sign In &rarr;</a>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      Next-Gen HR Platform
+    </div>
+    <h1>Manage Your Team<br>with <span>Clarity &amp; Control</span></h1>
+    <p>EMS gives administrators and faculty a unified platform to manage departments, attendance, salaries, and employee records — all in one place.</p>
+    <div class="hero-actions">
+      <a href="/login" class="btn btn-primary btn-lg" id="hero-get-started-btn">Get Started &rarr;</a>
+      <a href="#features" class="btn btn-secondary btn-lg" id="hero-learn-more-btn">Explore Features</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="value">100%</div>
+        <div class="label">Secure Access</div>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <div class="value">3</div>
+        <div class="label">Role Levels</div>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <div class="value">8+</div>
+        <div class="label">Core Features</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="features-section">
+    <p class="section-label">Capabilities</p>
+    <h2 class="section-heading">Everything You Need</h2>
+    <p class="section-subheading">A comprehensive suite designed for academic institutions to run HR operations smoothly.</p>
+
+    <div class="features-grid">
+      <div class="feature-card animate-in delay-1">
+        <div class="feature-icon">🔐</div>
+        <h3>Secure Login</h3>
+        <p>Role-based authentication for Dean, HOD, and Faculty with session management.</p>
+      </div>
+      <div class="feature-card animate-in delay-2">
+        <div class="feature-icon">👥</div>
+        <h3>Employee CRUD</h3>
+        <p>Add, view, update, and remove employee records with full audit trail.</p>
+      </div>
+      <div class="feature-card animate-in delay-3">
+        <div class="feature-icon">🔍</div>
+        <h3>Smart Search</h3>
+        <p>Search and filter employees instantly by name, department, or role.</p>
+      </div>
+      <div class="feature-card animate-in delay-4">
+        <div class="feature-icon">🏢</div>
+        <h3>Departments</h3>
+        <p>Create departments and assign members with permission-based controls.</p>
+      </div>
+      <div class="feature-card animate-in delay-1">
+        <div class="feature-icon">📅</div>
+        <h3>Attendance</h3>
+        <p>Mark and track daily attendance records for all employees.</p>
+      </div>
+      <div class="feature-card animate-in delay-2">
+        <div class="feature-icon">💰</div>
+        <h3>Salary Management</h3>
+        <p>Store and update salary details with position-based categorization.</p>
+      </div>
+      <div class="feature-card animate-in delay-3">
+        <div class="feature-icon">📊</div>
+        <h3>Live Dashboard</h3>
+        <p>Real-time statistics with employee counts, departments, and recent activity.</p>
+      </div>
+      <div class="feature-card animate-in delay-4">
+        <div class="feature-icon">📤</div>
+        <h3>Data Export</h3>
+        <p>Export employee data to CSV for reporting and external analysis.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>&copy; 2026 Employee Management System &mdash; Built for College Project &bull; Powered by Node.js &amp; MongoDB</p>
+  </footer>
+
+</body>
+</html>

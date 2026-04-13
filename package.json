@@ -1,0 +1,19 @@
+{
+  "name": "employee-management",
+  "version": "1.0.0",
+  "description": "CRUD Employee Management System",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^16.0.0",
+    "ejs": "^3.1.10",
+    "express": "^4.18.2",
+    "express-session": "^1.19.0",
+    "json2csv": "^6.0.0-alpha.2",
+    "mongoose": "^7.0.0"
+  }
+}

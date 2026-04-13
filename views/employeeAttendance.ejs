@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Attendance — <%= employee.name %> — EMS</title>
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/departments" class="nav-brand"><div class="brand-icon">E</div><span class="brand-name">EMS</span></a>
+  <div class="nav-links">
+    <a href="/dashboard/dean" class="nav-link" id="nav-dash">🏠 Dashboard</a>
+    <a href="/employees"      class="nav-link" id="nav-emp">👥 Employees</a>
+    <a href="/attendance"     class="nav-link active" id="nav-att">📅 Attendance</a>
+    <a href="/leaves"         class="nav-link" id="nav-leaves">🌴 Leaves</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
+    <button id="themeToggle" class="theme-toggle-btn">🌙</button>
+    <button id="hamburger" class="hamburger-btn"><span></span><span></span><span></span></button>
+    <form action="/logout" method="POST">
+      <button type="submit" class="btn btn-secondary btn-sm" id="logout-btn">Logout</button>
+    </form>
+  </div>
+</nav>
+
+<div id="mobileNav" class="mobile-nav">
+  <a href="/dashboard/dean">🏠 Dashboard</a>
+  <a href="/employees">👥 Employees</a>
+  <a href="/attendance">📅 Attendance</a>
+  <a href="/leaves">🌴 Leaves</a>
+  <div class="mobile-divider"></div>
+  <form action="/logout" method="POST">
+    <button type="submit" class="btn btn-secondary btn-sm" style="width:100%">Logout</button>
+  </form>
+</div>
+
+<div class="main-content">
+  <div class="page-wrapper">
+
+    <div class="page-header animate-in" style="margin-bottom:28px;">
+      <div>
+        <h1 style="font-size:1.7rem;">📅 Attendance — <%= employee.name %></h1>
+        <p style="color:var(--text-muted);margin-top:4px;"><%= employee.employeeId %> · <%= employee.department %> · <%= employee.role ? employee.role.toUpperCase() : '' %></p>
+      </div>
+      <a href="/attendance" class="btn btn-secondary no-print" id="back-btn">← All Attendance</a>
+    </div>
+
+    <!-- Stats -->
+    <div class="card animate-in delay-1" style="margin-bottom:24px;">
+      <div class="card-header"><h3 class="card-title">📊 Overall Summary</h3></div>
+      <div class="att-stat-grid">
+        <div class="att-stat"><div class="att-num" style="color:var(--success);"><%= stats.present %></div><div class="att-label">Present</div></div>
+        <div class="att-stat"><div class="att-num" style="color:var(--warning);"><%= stats.late %></div><div class="att-label">Late</div></div>
+        <div class="att-stat"><div class="att-num" style="color:var(--danger);"><%= stats.absent %></div><div class="att-label">Absent</div></div>
+        <div class="att-stat">
+          <div class="att-num" style="color:var(--accent);">
+            <%= stats.total > 0 ? Math.round((stats.present + stats.late * 0.5) / stats.total * 100) : 0 %>%
+          </div>
+          <div class="att-label">Attendance %</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Records table -->
+    <div class="card animate-in delay-2">
+      <div class="card-header">
+        <h3 class="card-title">📋 Records (<%= stats.total %>)</h3>
+        <button onclick="window.print()" class="btn btn-secondary btn-sm no-print" id="print-btn">🖨 Print</button>
+      </div>
+      <% if (attendance.length === 0) { %>
+        <div class="empty-state"><div class="empty-icon">📅</div><p>No attendance records.</p></div>
+      <% } else { %>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>#</th><th>Date</th><th>Day</th><th>Status</th></tr></thead>
+            <tbody>
+              <% attendance.forEach((rec, i) => { %>
+                <tr>
+                  <td style="color:var(--text-muted);"><%= i + 1 %></td>
+                  <td style="font-weight:500;"><%= new Date(rec.date).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}) %></td>
+                  <td style="color:var(--text-muted);"><%= new Date(rec.date).toLocaleDateString('en-IN',{weekday:'short'}) %></td>
+                  <td>
+                    <% if (rec.status === 'Present') { %><span class="badge badge-green">✓ Present</span>
+                    <% } else if (rec.status === 'Late') { %><span class="badge badge-late">⏰ Late</span>
+                    <% } else { %><span class="badge badge-red">✗ Absent</span><% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+<script src="/app.js"></script>
+</body>
+</html>

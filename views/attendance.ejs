@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Attendance — EMS</title>
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/dashboard/dean" class="nav-brand"><div class="brand-icon">E</div><span class="brand-name">EMS</span></a>
+  <div class="nav-links">
+    <a href="/dashboard/dean" class="nav-link" id="nav-dash">🏠 Dashboard</a>
+    <a href="/employees"      class="nav-link" id="nav-emp">👥 Employees</a>
+    <a href="/departments"    class="nav-link" id="nav-dept">🏢 Departments</a>
+    <a href="/attendance"     class="nav-link active" id="nav-att">📅 Attendance</a>
+    <a href="/leaves"         class="nav-link" id="nav-leaves">🌴 Leaves</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+    <button onclick="window.print()" class="btn btn-secondary btn-sm no-print" id="print-att-btn">🖨 Print</button>
+    <button id="themeToggle" class="theme-toggle-btn">🌙</button>
+    <button id="hamburger" class="hamburger-btn"><span></span><span></span><span></span></button>
+    <form action="/logout" method="POST">
+      <button type="submit" class="btn btn-secondary btn-sm" id="logout-btn">Logout</button>
+    </form>
+  </div>
+</nav>
+
+<div id="mobileNav" class="mobile-nav">
+  <a href="/dashboard/dean">🏠 Dashboard</a>
+  <a href="/employees">👥 Employees</a>
+  <a href="/departments">🏢 Departments</a>
+  <a href="/attendance">📅 Attendance</a>
+  <a href="/leaves">🌴 Leaves</a>
+  <div class="mobile-divider"></div>
+  <form action="/logout" method="POST">
+    <button type="submit" class="btn btn-secondary btn-sm" style="width:100%">Logout</button>
+  </form>
+</div>
+
+<div class="main-content">
+  <div class="page-wrapper">
+
+    <div class="page-header animate-in" style="margin-bottom:28px;">
+      <div>
+        <h1 style="font-size:1.7rem;">📅 Attendance</h1>
+        <p style="color:var(--text-muted);margin-top:4px;">Mark and review staff attendance records</p>
+      </div>
+      <span class="badge badge-green" style="padding:8px 16px;font-size:0.8rem;"><%= attendance.length %> record<%= attendance.length !== 1 ? 's' : '' %></span>
+    </div>
+
+    <!-- Flash Messages -->
+    <% if (query && query.error) { %>
+      <div class="alert alert-error animate-in" data-auto-dismiss><span>⚠</span> <%= query.error.replace(/\+/g,' ') %></div>
+    <% } %>
+    <% if (query && query.success) { %>
+      <div class="alert alert-success animate-in" data-auto-dismiss><span>✓</span> <%= query.success.replace(/\+/g,' ') %></div>
+    <% } %>
+
+    <!-- Mark Attendance Form -->
+    <div class="card animate-in delay-1" style="margin-bottom:28px;">
+      <div class="card-header">
+        <h3 class="card-title">✏️ Mark Attendance</h3>
+      </div>
+      <form action="/attendance/mark" method="POST" id="markAttForm">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;align-items:flex-end;">
+          <div class="form-group" style="margin:0;">
+            <label for="empIdInput">Employee ID</label>
+            <input type="text" name="employeeId" id="empIdInput" placeholder="e.g. FAC001" required>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="attDateInput">Date</label>
+            <input type="date" name="date" id="attDateInput" value="<%= new Date().toISOString().split('T')[0] %>" required>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="attStatusInput">Status</label>
+            <select name="status" id="attStatusInput" required>
+              <option value="Present">✓ Present</option>
+              <option value="Late">⏰ Late</option>
+              <option value="Absent">✗ Absent</option>
+            </select>
+          </div>
+          <div style="margin:0;">
+            <button type="submit" class="btn btn-primary" id="markAttBtn" style="width:100%;">Mark</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="card animate-in delay-2 no-print" style="margin-bottom:20px;padding:16px 20px;">
+      <form action="/attendance" method="GET" id="filterForm" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
+        <div class="form-group" style="margin:0;flex:1;min-width:130px;">
+          <label for="fromDate">From Date</label>
+          <input type="date" name="fromDate" id="fromDate" value="<%= query.fromDate || '' %>">
+        </div>
+        <div class="form-group" style="margin:0;flex:1;min-width:130px;">
+          <label for="toDate">To Date</label>
+          <input type="date" name="toDate" id="toDate" value="<%= query.toDate || '' %>">
+        </div>
+        <div class="form-group" style="margin:0;flex:1;min-width:120px;">
+          <label for="statusFilter">Status</label>
+          <select name="statusFilter" id="statusFilter">
+            <option value="">All Statuses</option>
+            <option value="Present" <%= query.statusFilter === 'Present' ? 'selected' : '' %>>Present</option>
+            <option value="Late"    <%= query.statusFilter === 'Late'    ? 'selected' : '' %>>Late</option>
+            <option value="Absent"  <%= query.statusFilter === 'Absent'  ? 'selected' : '' %>>Absent</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;margin:0;">
+          <button type="submit" class="btn btn-primary btn-sm" id="applyFilter">Filter</button>
+          <a href="/attendance" class="btn btn-secondary btn-sm" id="clearFilter">Clear</a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Attendance Table -->
+    <div class="card animate-in delay-3">
+      <% if (attendance.length === 0) { %>
+        <div class="empty-state"><div class="empty-icon">📅</div><p>No attendance records found.</p></div>
+      <% } else { %>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Employee ID</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% attendance.forEach((rec, i) => { %>
+                <tr>
+                  <td style="color:var(--text-muted);font-size:0.8rem;"><%= (page-1)*15 + i + 1 %></td>
+                  <td style="font-weight:600;font-size:0.85rem;">
+                    <% if (rec.employeeId) { %>
+                      <a href="/attendance/employee/<%= rec.employeeId._id %>" style="color:var(--accent);text-decoration:none;" id="empAttLink_<%= i %>"><%= rec.employeeId.employeeId %></a>
+                    <% } else { %>N/A<% } %>
+                  </td>
+                  <td><%= rec.employeeId ? rec.employeeId.name : 'Unknown' %></td>
+                  <td style="color:var(--text-muted);"><%= rec.employeeId ? rec.employeeId.department : '—' %></td>
+                  <td><%= new Date(rec.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) %></td>
+                  <td>
+                    <% if (rec.status === 'Present') { %><span class="badge badge-green">✓ Present</span>
+                    <% } else if (rec.status === 'Late') { %><span class="badge badge-late">⏰ Late</span>
+                    <% } else { %><span class="badge badge-red">✗ Absent</span><% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <!-- Pagination -->
+        <div class="pagination no-print">
+          <a href="/attendance?page=<%= page > 1 ? page-1 : 1 %>&fromDate=<%= query.fromDate||'' %>&toDate=<%= query.toDate||'' %>&statusFilter=<%= query.statusFilter||'' %>" id="prevPageBtn">← Prev</a>
+          <span style="flex:1;text-align:center;font-size:0.8rem;color:var(--text-muted);">Page <%= page %> of <%= totalPages %></span>
+          <a href="/attendance?page=<%= page < totalPages ? page+1 : totalPages %>&fromDate=<%= query.fromDate||'' %>&toDate=<%= query.toDate||'' %>&statusFilter=<%= query.statusFilter||'' %>" id="nextPageBtn">Next →</a>
+        </div>
+      <% } %>
+    </div>
+
+  </div>
+</div>
+<script src="/app.js"></script>
+</body>
+</html>

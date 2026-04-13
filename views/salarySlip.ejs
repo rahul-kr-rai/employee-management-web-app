@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Salary Slip — EMS</title>
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar no-print">
+  <a href="/departments" class="nav-brand"><div class="brand-icon">E</div><span class="brand-name">EMS</span></a>
+  <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
+    <button id="themeToggle" class="theme-toggle-btn">🌙</button>
+    <button onclick="window.print()" class="btn btn-primary btn-sm" id="print-btn">🖨 Print Slip</button>
+    <a href="javascript:history.back()" class="btn btn-secondary btn-sm" id="back-btn">← Back</a>
+  </div>
+</nav>
+
+<div class="main-content">
+  <div class="page-wrapper" style="max-width:720px;">
+
+    <div class="card animate-in">
+      <!-- Slip Header -->
+      <div class="slip-header">
+        <div style="width:52px;height:52px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.4rem;color:#fff;margin:0 auto 12px;">E</div>
+        <h2 style="font-size:1.35rem;font-weight:800;margin-bottom:4px;">Employee Management System</h2>
+        <p style="color:var(--text-muted);font-size:0.875rem;">Salary Slip — <%= monthName %> <%= year %></p>
+      </div>
+
+      <!-- Employee Details -->
+      <div class="slip-grid">
+        <div>
+          <div class="slip-row"><span style="color:var(--text-muted);">Employee ID</span><strong><%= employee.employeeId %></strong></div>
+          <div class="slip-row"><span style="color:var(--text-muted);">Name</span><strong><%= employee.name %></strong></div>
+          <div class="slip-row"><span style="color:var(--text-muted);">Designation</span><span><%= employee.position || employee.role %></span></div>
+        </div>
+        <div>
+          <div class="slip-row"><span style="color:var(--text-muted);">Department</span><strong><%= employee.department %></strong></div>
+          <div class="slip-row"><span style="color:var(--text-muted);">Role</span><span class="badge badge-purple"><%= (employee.role || '').toUpperCase() %></span></div>
+          <div class="slip-row"><span style="color:var(--text-muted);">Pay Period</span><span><%= monthName %> <%= year %></span></div>
+        </div>
+      </div>
+
+      <!-- Attendance Summary -->
+      <div style="margin-bottom:20px;">
+        <h3 class="card-title" style="margin-bottom:14px;">📅 Attendance Summary</h3>
+        <div class="att-stat-grid">
+          <div class="att-stat"><div class="att-num"><%= workingDays %></div><div class="att-label">Working Days</div></div>
+          <div class="att-stat"><div class="att-num" style="color:var(--success);"><%= presentDays %></div><div class="att-label">Present</div></div>
+          <div class="att-stat"><div class="att-num" style="color:var(--warning);"><%= lateDays %></div><div class="att-label">Late</div></div>
+          <div class="att-stat"><div class="att-num" style="color:var(--danger);"><%= absentDays %></div><div class="att-label">Absent</div></div>
+        </div>
+      </div>
+
+      <!-- Earnings & Deductions -->
+      <div class="slip-grid">
+        <!-- Earnings -->
+        <div>
+          <h3 class="card-title" style="margin-bottom:12px;">💰 Earnings</h3>
+          <div class="slip-row"><span>Basic Salary</span><strong>₹<%= basicSalary.toLocaleString('en-IN') %></strong></div>
+          <div class="slip-row"><span>Earned (<%= presentDays %>P + <%= lateDays %>L×0.5)</span><strong style="color:var(--success);">₹<%= earnedSalary.toLocaleString('en-IN') %></strong></div>
+        </div>
+        <!-- Deductions -->
+        <div>
+          <h3 class="card-title" style="margin-bottom:12px;">📉 Deductions</h3>
+          <div class="slip-row"><span>Absent Deduction (<%= absentDays %> days)</span><strong style="color:var(--danger);">₹<%= deductions.toLocaleString('en-IN') %></strong></div>
+          <div class="slip-row"><span>Other Deductions</span><strong>₹0</strong></div>
+        </div>
+      </div>
+
+      <!-- Net Salary -->
+      <div class="slip-total">
+        <span>💵 Net Salary — <%= monthName %> <%= year %></span>
+        <span>₹<%= netSalary.toLocaleString('en-IN') %></span>
+      </div>
+
+      <p style="margin-top:20px;font-size:0.78rem;color:var(--text-muted);text-align:center;">
+        This is a computer-generated salary slip. No signature required. | Generated on <%= new Date().toDateString() %>
+      </p>
+    </div>
+
+    <!-- Month selector -->
+    <form action="" method="GET" class="card animate-in delay-1 no-print" style="margin-top:20px;padding:16px;">
+      <p style="font-weight:600;margin-bottom:12px;">📆 Change Period</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="form-group" style="margin:0;flex:1;min-width:100px;">
+          <label for="slipMonth">Month</label>
+          <select name="month" id="slipMonth">
+            <% ['January','February','March','April','May','June','July','August','September','October','November','December'].forEach((m, idx) => { %>
+              <option value="<%= idx+1 %>" <%= month === idx+1 ? 'selected' : '' %>><%= m %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;flex:1;min-width:80px;">
+          <label for="slipYear">Year</label>
+          <input type="number" name="year" id="slipYear" value="<%= year %>" min="2000" max="2099">
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm" id="applySlipBtn">Apply</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script src="/app.js"></script>
+</body>
+</html>

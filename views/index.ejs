@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Employees — EMS</title>
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/departments" class="nav-brand"><div class="brand-icon">E</div><span class="brand-name">EMS</span></a>
+  <div class="nav-links">
+    <a href="/dashboard/dean" class="nav-link" id="nav-dash">🏠 Dashboard</a>
+    <a href="/employees"      class="nav-link active" id="nav-emp">👥 Employees</a>
+    <a href="/departments"    class="nav-link" id="nav-dept">🏢 Departments</a>
+    <a href="/attendance"     class="nav-link" id="nav-att">📅 Attendance</a>
+    <a href="/leaves"         class="nav-link" id="nav-leaves">🌴 Leaves</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+    <a href="/employees/export" class="btn btn-secondary btn-sm no-print" id="export-btn">📤 Export</a>
+    <button id="themeToggle" class="theme-toggle-btn">🌙</button>
+    <button id="hamburger" class="hamburger-btn"><span></span><span></span><span></span></button>
+    <form action="/logout" method="POST">
+      <button type="submit" class="btn btn-secondary btn-sm" id="logout-btn">Logout</button>
+    </form>
+  </div>
+</nav>
+
+<div id="mobileNav" class="mobile-nav">
+  <a href="/dashboard/dean">🏠 Dashboard</a>
+  <a href="/employees">👥 Employees</a>
+  <a href="/departments">🏢 Departments</a>
+  <a href="/attendance">📅 Attendance</a>
+  <a href="/leaves">🌴 Leaves</a>
+  <div class="mobile-divider"></div>
+  <a href="/employees/export">📤 Export CSV</a>
+  <form action="/logout" method="POST">
+    <button type="submit" class="btn btn-secondary btn-sm" style="width:100%;margin-top:6px;">Logout</button>
+  </form>
+</div>
+
+<div class="main-content">
+  <div class="page-wrapper">
+
+    <div class="page-header animate-in" style="margin-bottom:28px;">
+      <div>
+        <h1 style="font-size:1.7rem;">👥 Employees</h1>
+        <p style="color:var(--text-muted);margin-top:4px;">Manage all staff records — <strong><%= total %></strong> total</p>
+      </div>
+      <button class="btn btn-primary" onclick="document.getElementById('addEmpPanel').classList.toggle('hidden')" id="add-emp-toggle">+ Add Employee</button>
+    </div>
+
+    <!-- Flash Messages -->
+    <% if (search && search.error) { %>
+      <div class="alert alert-error animate-in" data-auto-dismiss><span>⚠</span> <%= search.error.replace(/\+/g,' ') %></div>
+    <% } %>
+    <% if (search && search.success) { %>
+      <div class="alert alert-success animate-in" data-auto-dismiss><span>✓</span> <%= search.success.replace(/\+/g,' ') %></div>
+    <% } %>
+
+    <!-- Add Employee Panel (collapsible) -->
+    <div id="addEmpPanel" class="card animate-in hidden" style="margin-bottom:24px;border:2px solid var(--border);">
+      <div class="card-header" style="background:var(--bg-secondary);padding:16px 20px;">
+        <h3 class="card-title">➕ Add New Employee</h3>
+      </div>
+      <form action="/employees/add" method="POST" id="addEmpForm" style="padding:20px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:16px;margin-bottom:16px;">
+          <div class="form-group" style="margin:0;">
+            <label for="addEmpId">Employee ID</label>
+            <input type="text" name="employeeId" id="addEmpId" placeholder="Auto-generated" readonly style="font-family:monospace;background:var(--bg-secondary);">
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="addEmpRole">Role</label>
+            <select name="role" id="addEmpRole" onchange="fetchNextId(this.value)" required>
+              <option value="faculty">Faculty</option>
+              <option value="hod">HOD</option>
+              <option value="dean">Dean</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="addEmpDept">Department</label>
+            <input type="text" name="department" id="addEmpDept" placeholder="Computer Science" required>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:16px;margin-bottom:16px;">
+          <div class="form-group" style="margin:0;">
+            <label for="addEmpName">Full Name</label>
+            <input type="text" name="name" id="addEmpName" placeholder="Dr. Jane Smith" required>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="addEmpEmail">Email Address</label>
+            <input type="email" name="email" id="addEmpEmail" placeholder="jane@college.edu" required>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="addEmpPhone">Phone Number</label>
+            <input type="text" name="phone" id="addEmpPhone" placeholder="9876543210">
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:16px;margin-bottom:16px;">
+          <div class="form-group" style="margin:0;">
+            <label for="addEmpPos">Position Title</label>
+            <input type="text" name="position" id="addEmpPos" placeholder="Professor">
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="addEmpSalary">Salary (₹)</label>
+            <input type="number" name="salary" id="addEmpSalary" placeholder="60000">
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="addEmpJoin">Join Date</label>
+            <input type="date" name="joinDate" id="addEmpJoin" value="<%= new Date().toISOString().split('T')[0] %>">
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="addEmpPwd">Login Password</label>
+            <input type="password" name="password" id="addEmpPwd" placeholder="Min 6 chars" required>
+          </div>
+        </div>
+        
+        <div style="display:flex;gap:12px;margin-top:20px;border-top:1px solid var(--border);padding-top:20px;">
+          <button type="submit" class="btn btn-primary" id="addEmpSubmit" style="flex:1;">Add Employee</button>
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('addEmpPanel').classList.add('hidden')" id="cancelAddEmp" style="width:120px;">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="card animate-in delay-1 no-print" style="margin-bottom:20px;padding:16px 20px;">
+      <form action="/employees" method="GET" id="searchForm" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
+        <div class="form-group" style="margin:0;flex:2;min-width:150px;">
+          <label for="nameSearch">Search Name</label>
+          <input type="text" name="name" id="nameSearch" placeholder="Search by name..." value="<%= search && search.name ? search.name : '' %>">
+        </div>
+        <div class="form-group" style="margin:0;flex:1;min-width:130px;">
+          <label for="deptSearch">Department</label>
+          <input type="text" name="department" id="deptSearch" placeholder="e.g. CS" value="<%= search && search.department ? search.department : '' %>">
+        </div>
+        <div class="form-group" style="margin:0;min-width:110px;">
+          <label for="roleSearch">Role</label>
+          <select name="role" id="roleSearch">
+            <option value="">All Roles</option>
+            <option value="faculty" <%= search && search.role === 'faculty' ? 'selected' : '' %>>Faculty</option>
+            <option value="hod"     <%= search && search.role === 'hod'     ? 'selected' : '' %>>HOD</option>
+            <option value="dean"    <%= search && search.role === 'dean'    ? 'selected' : '' %>>Dean</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button type="submit" class="btn btn-primary btn-sm" id="searchBtn">Search</button>
+          <a href="/employees" class="btn btn-secondary btn-sm" id="clearSearch">Clear</a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Employee Table -->
+    <div class="animate-in delay-2">
+      <% if (employees.length === 0) { %>
+        <div class="card"><div class="empty-state"><div class="empty-icon">👤</div><p>No employees found. Adjust your search or add one above.</p></div></div>
+      <% } else { %>
+        <div class="table-wrapper card" style="padding:0;overflow:hidden;">
+          <table>
+            <thead>
+              <tr>
+                <% const cols = [{key:'employeeId',label:'ID'},{key:'name',label:'Name'},{key:'email',label:'Email'},{key:'department',label:'Dept'},{key:'role',label:'Role'},{key:'salary',label:'Salary'},{key:'joinDate',label:'Joined'}]; %>
+                <% cols.forEach(col => { %>
+                  <th>
+                    <a href="/employees?sortBy=<%= col.key %>&order=<%= search && search.sortBy === col.key && search.order === 'asc' ? 'desc' : 'asc' %>&name=<%= search && search.name ? search.name : '' %>&department=<%= search && search.department ? search.department : '' %>&role=<%= search && search.role ? search.role : '' %>"
+                       style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:4px;" id="sort_<%= col.key %>">
+                      <%= col.label %>
+                      <% if (search && search.sortBy === col.key) { %><span style="opacity:0.7;"><%= search.order === 'asc' ? '↑' : '↓' %></span><% } else { %><span style="opacity:0.25;">↕</span><% } %>
+                    </a>
+                  </th>
+                <% }) %>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% employees.forEach((emp) => { %>
+                <tr>
+                  <td><code><%= emp.employeeId %></code></td>
+                  <td style="font-weight:600;"><%= emp.name %></td>
+                  <td><a href="mailto:<%= emp.email %>" style="color:var(--accent);text-decoration:none;"><%= emp.email %></a></td>
+                  <td><%= emp.department %></td>
+                  <td>
+                    <% if (emp.role === 'dean') { %> <span class="badge badge-purple">Dean</span>
+                    <% } else if (emp.role === 'hod') { %> <span class="badge badge-green">HOD</span>
+                    <% } else { %> <span class="badge badge-blue">Faculty</span> <% } %>
+                  </td>
+                  <td><%= emp.salary != null ? '₹' + emp.salary.toLocaleString('en-IN') : 'N/A' %></td>
+                  <td><%= emp.joinDate ? new Date(emp.joinDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : 'N/A' %></td>
+                  <td style="white-space:nowrap;">
+                    <a href="/employees/profile/<%= emp._id %>" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+                      👁 View Profile
+                    </a>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination no-print" style="margin-top:16px;">
+          <a href="/employees?page=<%= page > 1 ? page-1 : 1 %>&name=<%= search && search.name ? search.name : '' %>&department=<%= search && search.department ? search.department : '' %>&role=<%= search && search.role ? search.role : '' %>" id="prevPageBtn">← Prev</a>
+          <span style="flex:1;text-align:center;font-size:0.8rem;color:var(--text-muted);">Page <%= page %> of <%= totalPages %></span>
+          <a href="/employees?page=<%= page < totalPages ? page+1 : totalPages %>&name=<%= search && search.name ? search.name : '' %>&department=<%= search && search.department ? search.department : '' %>&role=<%= search && search.role ? search.role : '' %>" id="nextPageBtn">Next →</a>
+        </div>
+      <% } %>
+    </div>
+
+  </div>
+</div>
+
+<style>.hidden{display:none!important;}</style>
+<script>
+  async function fetchNextId(role) {
+    try {
+      const r = await fetch(`/employees/next-id?role=${encodeURIComponent(role)}`);
+      const d = await r.json();
+      document.getElementById('addEmpId').value = d.nextId || '';
+    } catch { document.getElementById('addEmpId').value = ''; }
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    const roleEl = document.getElementById('addEmpRole');
+    if (roleEl) fetchNextId(roleEl.value);
+  });
+</script>
+<script src="/app.js"></script>
+</body>
+</html>

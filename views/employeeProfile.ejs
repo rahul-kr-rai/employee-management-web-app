@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Profile — <%= employee.name %> — EMS</title>
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .profile-header-banner {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      color: #fff;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(99,102,241,0.25);
+    }
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 800;
+      flex-shrink: 0;
+      border: 3px solid rgba(255,255,255,0.3);
+    }
+    .profile-banner-info { flex: 1; min-width: 0; }
+    .profile-banner-info h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 4px; }
+    .profile-banner-info p { font-size: 0.95rem; opacity: 0.9; margin-bottom: 8px; }
+    .profile-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+    .profile-badges .badge { background: rgba(255,255,255,0.2); color: #fff; border: none; }
+
+    .quick-actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      background: var(--bg-card);
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/departments" class="nav-brand">
+    <div class="brand-icon">E</div>
+    <span class="brand-name">EMS</span>
+  </a>
+  <div class="nav-links">
+    <a href="<%= userRole === 'dean' ? '/dashboard/dean' : '/dashboard/user' %>" class="nav-link" id="nav-dash">🏠 Dashboard</a>
+    <% if (userRole === 'dean') { %>
+      <a href="/employees" class="nav-link active" id="nav-emp">👥 Employees</a>
+    <% } %>
+    <a href="/departments" class="nav-link" id="nav-dept">🏢 Departments</a>
+    <a href="/attendance"  class="nav-link" id="nav-att">📅 Attendance</a>
+    <a href="/leaves"      class="nav-link" id="nav-leaves">🌴 Leaves</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+    <button id="themeToggle" class="theme-toggle-btn" title="Toggle dark mode">🌙</button>
+    <button id="hamburger" class="hamburger-btn" aria-expanded="false"><span></span><span></span><span></span></button>
+    <form action="/logout" method="POST">
+      <button type="submit" class="btn btn-secondary btn-sm" id="logout-btn">Logout</button>
+    </form>
+  </div>
+</nav>
+
+<div id="mobileNav" class="mobile-nav">
+  <a href="<%= userRole === 'dean' ? '/dashboard/dean' : '/dashboard/user' %>">🏠 Dashboard</a>
+  <% if (userRole === 'dean') { %><a href="/employees">👥 Employees</a><% } %>
+  <a href="/departments">🏢 Departments</a>
+  <a href="/attendance">📅 Attendance</a>
+  <a href="/leaves">🌴 Leaves</a>
+  <div class="mobile-divider"></div>
+  <form action="/logout" method="POST">
+    <button type="submit" class="btn btn-secondary btn-sm" style="width:100%;">Logout</button>
+  </form>
+</div>
+
+<div class="main-content">
+  <div class="page-wrapper" style="max-width:950px;">
+
+    <!-- Breadcrumb -->
+    <div class="animate-in" style="margin-bottom:20px;">
+      <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;">
+        <a href="/employees" style="color:var(--accent);text-decoration:none;">👥 Employees</a>
+        <span style="margin:0 6px;">›</span>
+        <span>Profile</span>
+        <span style="margin:0 6px;">›</span>
+        <span><%= employee.name %></span>
+      </p>
+    </div>
+
+    <!-- Banner -->
+    <div class="profile-header-banner animate-in delay-1">
+      <div class="profile-avatar"><%= employee.name.charAt(0).toUpperCase() %></div>
+      <div class="profile-banner-info">
+        <h1><%= employee.name %></h1>
+        <p><%= employee.position || 'Employee' %> — <%= employee.department %></p>
+        <div class="profile-badges">
+          <% if(employee.role === 'dean') { %><span class="badge">🎖 Dean</span><% } %>
+          <% if(employee.role === 'hod') { %><span class="badge">🎓 HOD</span><% } %>
+          <% if(employee.role === 'faculty') { %><span class="badge">👨‍🏫 Faculty</span><% } %>
+          <span class="badge">ID: <%= employee.employeeId %></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions animate-in delay-1">
+      <div style="flex:1;display:flex;align-items:center;font-weight:600;color:var(--text-primary);">
+        ⚡ Quick Actions
+      </div>
+      <a href="/attendance/employee/<%= employee._id %>" class="btn btn-secondary btn-sm">📅 View Attendance log</a>
+      <a href="/employees/salary-slip/<%= employee._id %>" class="btn btn-secondary btn-sm">💰 Print Salary Slip</a>
+      
+      <form action="/employees/delete/<%= employee._id %>" method="POST" style="margin:0;" onsubmit="return confirm('WARNING: Are you absolutely sure you want to permanently delete <%= employee.name %>? This action cannot be undone.')">
+        <button type="submit" class="btn btn-danger btn-sm">✕ Delete Profile</button>
+      </form>
+    </div>
+
+    <!-- Editable Form -->
+    <div class="card animate-in delay-2" style="padding:32px;">
+      <div style="margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:16px;">
+        <h2 style="font-size:1.4rem;font-weight:700;">Update Profile Details</h2>
+        <p style="color:var(--text-muted);font-size:0.9rem;margin-top:4px;">Change the personal information or institutional assignment for this employee below.</p>
+      </div>
+
+      <form action="/employees/update/<%= employee._id %>" method="POST" id="updateProfileForm">
+        
+        <!-- Row 1 -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:20px;margin-bottom:20px;">
+          <div class="form-group" style="margin:0;">
+            <label for="fId">Employee ID</label>
+            <input type="text" name="employeeId" id="fId" value="<%= employee.employeeId %>" required>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="fName">Full Name</label>
+            <input type="text" name="name" id="fName" value="<%= employee.name %>" required>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="fRole">Access Role</label>
+            <select name="role" id="fRole" required>
+              <option value="faculty" <%= employee.role === 'faculty' ? 'selected' : '' %>>Faculty</option>
+              <option value="hod"     <%= employee.role === 'hod'     ? 'selected' : '' %>>Head of Department</option>
+              <option value="dean"    <%= employee.role === 'dean'    ? 'selected' : '' %>>Dean Administration</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Row 2 -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:20px;margin-bottom:20px;">
+          <div class="form-group" style="margin:0;">
+            <label for="fDept">Department</label>
+            <input type="text" name="department" id="fDept" value="<%= employee.department %>" required>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="fEmail">Email Address</label>
+            <input type="email" name="email" id="fEmail" value="<%= employee.email %>" required>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="fPhone">Phone Number</label>
+            <input type="text" name="phone" id="fPhone" value="<%= employee.phone || '' %>">
+          </div>
+        </div>
+
+        <!-- Row 3 -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:20px;margin-bottom:20px;">
+          <div class="form-group" style="margin:0;">
+            <label for="fPos">Internal Title / Position</label>
+            <input type="text" name="position" id="fPos" value="<%= employee.position || '' %>">
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="fSalary">Monthly Salary (₹)</label>
+            <input type="number" name="salary" id="fSalary" value="<%= employee.salary || 0 %>">
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label for="fJoin">Join Date</label>
+            <input type="date" name="joinDate" id="fJoin" value="<%= employee.joinDate ? new Date(employee.joinDate).toISOString().split('T')[0] : '' %>">
+          </div>
+        </div>
+
+        <div style="display:flex;gap:16px;margin-top:32px;">
+          <button type="submit" class="btn btn-primary" style="flex:2;font-size:1rem;padding:12px;">✓ Save Changes</button>
+          <a href="/employees" class="btn btn-secondary" style="flex:1;display:flex;align-items:center;justify-content:center;">Cancel</a>
+        </div>
+        
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

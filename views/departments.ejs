@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Departments — EMS</title>
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .dept-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: all var(--transition-slow);
+      margin-bottom: 12px;
+    }
+    .dept-card:hover {
+      border-color: rgba(99,102,241,0.25);
+      transform: translateX(4px);
+    }
+    .dept-avatar {
+      width: 44px; height: 44px;
+      background: rgba(99,102,241,0.12);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+    .dept-name-input {
+      flex: 1;
+      background: transparent;
+      border: 1px solid transparent;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .dept-name-input:focus {
+      background: var(--bg-input);
+      border-color: var(--accent);
+    }
+    .dept-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    /* Add dept form */
+    .add-dept-card {
+      background: var(--bg-card);
+      border: 1px dashed rgba(99,102,241,0.35);
+      border-radius: var(--radius-md);
+      padding: 20px 24px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+    .add-dept-card input {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="<%= userRole === 'dean' ? '/dashboard/dean' : '/dashboard/user' %>" class="nav-brand">
+      <div class="brand-icon">E</div>
+      <span class="brand-name">EMS</span>
+    </a>
+    <div class="nav-links">
+      <a href="<%= userRole === 'dean' ? '/dashboard/dean' : '/dashboard/user' %>" class="nav-link" id="nav-dashboard">📊 Dashboard</a>
+      <% if (userRole === 'dean') { %>
+        <a href="/employees" class="nav-link" id="nav-employees">👥 Employees</a>
+      <% } %>
+      <a href="/departments" class="nav-link active" id="nav-departments">🏢 Departments</a>
+      <a href="/attendance"  class="nav-link" id="nav-attendance">📅 Attendance</a>
+      <a href="/leaves"      class="nav-link" id="nav-leaves">🌴 Leaves</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+      <button id="themeToggle" class="theme-toggle-btn" title="Toggle dark mode">🌙</button>
+      <button id="hamburger" class="hamburger-btn" aria-expanded="false"><span></span><span></span><span></span></button>
+      <form action="/logout" method="POST" style="display:inline;">
+        <button type="submit" class="btn btn-secondary btn-sm" id="logoutBtn">Logout</button>
+      </form>
+    </div>
+  </nav>
+
+  <div id="mobileNav" class="mobile-nav">
+    <a href="<%= userRole === 'dean' ? '/dashboard/dean' : '/dashboard/user' %>">🏠 Dashboard</a>
+    <% if (userRole === 'dean') { %><a href="/employees">👥 Employees</a><% } %>
+    <a href="/departments">🏢 Departments</a>
+    <a href="/attendance">📅 Attendance</a>
+    <a href="/leaves">🌴 Leaves</a>
+    <div class="mobile-divider"></div>
+    <form action="/logout" method="POST"><button type="submit" class="btn btn-secondary btn-sm" style="width:100%;">Logout</button></form>
+  </div>
+
+  <!-- Page Content -->
+  <div class="main-content">
+    <div class="page-wrapper">
+
+      <!-- Page Header -->
+      <div class="page-header animate-in">
+        <div>
+          <h1>🏢 Departments</h1>
+          <p class="subtitle">Manage academic departments and their members.</p>
+        </div>
+        <span class="badge badge-blue" style="padding:8px 16px;font-size:0.8rem;"><%= departments.length %> Department<%= departments.length !== 1 ? 's' : '' %></span>
+      </div>
+
+      <!-- Flash Messages -->
+      <% if (query && query.error) { %>
+        <div class="alert alert-error animate-in" data-auto-dismiss><span>⚠</span> <%= query.error.replace(/\+/g,' ') %></div>
+      <% } %>
+      <% if (query && query.success) { %>
+        <div class="alert alert-success animate-in" data-auto-dismiss><span>✓</span> <%= query.success.replace(/\+/g,' ') %></div>
+      <% } %>
+
+      <!-- Add Department Form -->
+      <% if (userRole === 'dean' || userRole === 'hod') { %>
+      <div class="add-dept-card animate-in delay-1">
+        <div style="font-size:1.3rem;">🏢</div>
+        <form action="/departments/add" method="POST" style="display:flex;gap:10px;flex:1;align-items:center;" id="addDeptForm">
+          <input type="text" name="name" placeholder="New department name…" required id="newDeptName">
+          <button type="submit" class="btn btn-primary" id="addDeptBtn">+ Add Department</button>
+        </form>
+      </div>
+      <% } %>
+
+      <!-- Department List -->
+      <div class="animate-in delay-2">
+        <% if (departments.length === 0) { %>
+          <div class="card">
+            <div class="empty-state">
+              <div class="empty-icon">🏢</div>
+              <p>No departments yet. Add one above!</p>
+            </div>
+          </div>
+        <% } else { %>
+          <% departments.forEach((dep, i) => { %>
+            <div class="dept-card animate-in delay-<%= (i % 4) + 1 %>">
+              <div class="dept-avatar">🏢</div>
+              <form action="/departments/update/<%= dep._id %>" method="POST" style="display:contents;" id="updateDeptForm_<%= dep._id %>">
+                <div style="flex:1;min-width:0;">
+                  <input type="text" name="name" value="<%= dep.name %>" class="dept-name-input" id="deptNameInput_<%= dep._id %>">
+                  <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+                    <span class="badge badge-purple" style="font-size:0.72rem;">👥 <%= dep.memberCount %> member<%= dep.memberCount !== 1 ? 's' : '' %></span>
+                    <% if (dep.hodName) { %>
+                      <span class="badge badge-green" style="font-size:0.72rem;">🎓 HOD: <%= dep.hodName %></span>
+                    <% } else { %>
+                      <span class="badge badge-late" style="font-size:0.72rem;">No HOD assigned</span>
+                    <% } %>
+                  </div>
+                </div>
+                <div class="dept-actions">
+                  <a href="/departments/<%= dep._id %>/members" class="btn btn-primary btn-sm" id="viewMembers_<%= dep._id %>">👥 Members</a>
+                  <button type="submit" class="btn btn-success btn-sm" id="updateDept_<%= dep._id %>">✓ Update</button>
+                  <% if (userRole === 'dean') { %>
+                    <button type="button" class="btn btn-danger btn-sm" id="deleteDept_<%= dep._id %>"
+                      onclick="confirmDeleteDept('<%= dep._id %>', '<%= dep.name %>')">✕ Delete</button>
+                  <% } %>
+                  <% if (userRole === 'dean' || userRole === 'hod') { %>
+                    <a href="/departments/<%= dep._id %>/add-member" class="btn btn-secondary btn-sm" id="addMemberBtn_<%= dep._id %>">+ Member</a>
+                  <% } %>
+                </div>
+              </form>
+            </div>
+          <% }) %>
+        <% } %>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Bug 4 Fixed: department delete uses a hidden POST form submitted by JS
+    function confirmDeleteDept(deptId, deptName) {
+      if (!confirm('Delete department "' + deptName + '"? This cannot be undone.')) return;
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/departments/delete/' + deptId;
+      document.body.appendChild(form);
+      form.submit();
+    }
+  </script>
+
+<script src="/app.js"></script>
+</body>
+</html>

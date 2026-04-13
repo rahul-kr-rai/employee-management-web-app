@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — EMS</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="/dashboard/dean" class="nav-brand">
+      <div class="brand-icon">E</div>
+      <span class="brand-name">EMS</span>
+    </a>
+    <div class="nav-links">
+      <a href="/dashboard/dean" class="nav-link active" id="nav-dashboard">📊 Dashboard</a>
+      <a href="/employees"     class="nav-link" id="nav-employees">👥 Employees</a>
+      <a href="/departments"   class="nav-link" id="nav-departments">🏢 Departments</a>
+      <a href="/attendance"    class="nav-link" id="nav-attendance">📅 Attendance</a>
+    </div>
+    <div class="nav-right">
+      <form action="/logout" method="POST" style="display:inline;">
+        <button type="submit" class="btn btn-secondary btn-sm" id="logoutBtn">↩ Logout</button>
+      </form>
+    </div>
+  </nav>
+
+  <!-- Page Content -->
+  <div class="main-content">
+    <div class="page-wrapper">
+
+      <div class="page-header animate-in">
+        <div>
+          <h1>Dashboard</h1>
+          <p class="subtitle">System overview at a glance.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-3 animate-in delay-1">
+        <div class="stat-card">
+          <div class="stat-icon purple">👥</div>
+          <div class="stat-body">
+            <div class="stat-value"><%= totalEmployees %></div>
+            <div class="stat-label">Total Employees</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue">🏢</div>
+          <div class="stat-body">
+            <div class="stat-value"><%= totalDepartments %></div>
+            <div class="stat-label">Departments</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">✅</div>
+          <div class="stat-body">
+            <div class="stat-value"><%= activeEmployees %></div>
+            <div class="stat-label">Active Employees</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="animate-in delay-2" style="margin-top:28px;">
+        <p class="section-title">Quick Actions</p>
+        <div class="grid grid-4">
+          <a href="/employees"   class="card" style="text-decoration:none;text-align:center;padding:20px;" id="qa-employees">
+            <div style="font-size:1.6rem;margin-bottom:8px;">👥</div>
+            <div style="font-weight:600;font-size:0.875rem;">Employees</div>
+          </a>
+          <a href="/departments" class="card" style="text-decoration:none;text-align:center;padding:20px;" id="qa-departments">
+            <div style="font-size:1.6rem;margin-bottom:8px;">🏢</div>
+            <div style="font-weight:600;font-size:0.875rem;">Departments</div>
+          </a>
+          <a href="/attendance"  class="card" style="text-decoration:none;text-align:center;padding:20px;" id="qa-attendance">
+            <div style="font-size:1.6rem;margin-bottom:8px;">📅</div>
+            <div style="font-weight:600;font-size:0.875rem;">Attendance</div>
+          </a>
+          <a href="/employees?export=csv" class="card" style="text-decoration:none;text-align:center;padding:20px;" id="qa-export">
+            <div style="font-size:1.6rem;margin-bottom:8px;">📤</div>
+            <div style="font-weight:600;font-size:0.875rem;">Export CSV</div>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>
