@@ -117,8 +117,8 @@
       background: transparent;
       margin: 0;
     }
-    .float-group input:focus + label,
-    .float-group input:not(:placeholder-shown) + label {
+    .float-group:has(input:focus) label,
+    .float-group:has(input:not(:placeholder-shown)) label {
       top: 10px;
       transform: translateY(0);
       font-size: 0.7rem;
