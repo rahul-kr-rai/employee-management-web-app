@@ -18,8 +18,8 @@
 7. [Existing Features](#7-existing-features)
 8. [API Routes Reference](#8-api-routes-reference)
 9. [UI Pages](#9-ui-pages)
-10. [Known Bugs](#10-known-bugs)
-11. [Suggested New Features](#11-suggested-new-features)
+10. [Resolved Bugs](#10-resolved-bugs)
+11. [Suggested New Features (Future Scope)](#11-suggested-new-features-future-scope)
 12. [Implementation Roadmap](#12-implementation-roadmap)
 
 ---
@@ -33,13 +33,14 @@ The **Employee Management System (EMS)** is a full-stack web application designe
 - Enable department-based organization and management
 - Track attendance efficiently
 - Support role-based access control for Dean, HOD, and Faculty users
+- Facilitate leave applications and salary calculations
 
 ### Scope
 - Single organization (one institution)
 - Three user roles: Dean (admin), HOD, Faculty
-- Core CRUD operations for employees and departments
-- Attendance marking and viewing
-- Data export to CSV
+- Core CRUD operations for employees, departments, and leaves
+- Attendance marking, reporting, and personal tracking
+- Data export to CSV and printable layouts
 
 ---
 
@@ -78,7 +79,7 @@ The **Employee Management System (EMS)** is a full-stack web application designe
 
 ## 3. System Architecture
 
-```
+```text
 Browser (Client)
       |
       |  HTTP Request
@@ -87,8 +88,9 @@ Browser (Client)
 |     Express.js App        |  <- src/app.js
 |  (Port 3000)              |
 +---------------------------+
-|  Middleware Stack          |
+|  Middleware Stack         |
 |  * express.urlencoded     |
+|  * express.json           |
 |  * express-session        |
 |  * express.static         |
 +---------------------------+
@@ -97,17 +99,19 @@ Browser (Client)
 |  * /employees             |
 |  * /departments           |
 |  * /attendance            |
+|  * /leaves                |
 +---------------------------+
 |  Controller Layer         |
 |  * employeeController     |
 |  * departmentController   |
 |  * attendanceController   |
+|  * leaveController        |
 +---------------------------+
 |  Model Layer (Mongoose)   |
 |  * Employee               |
 |  * Department             |
 |  * Attendance             |
-|  * User                   |
+|  * Leave                  |
 +---------------------------+
       |
       |  Mongoose ODM
@@ -118,7 +122,7 @@ Browser (Client)
 |  * employees              |
 |  * departments            |
 |  * attendances            |
-|  * users                  |
+|  * leaves                 |
 +---------------------------+
 ```
 
@@ -134,7 +138,7 @@ Browser (Client)
 
 ## 4. Folder Structure
 
-```
+```text
 employee-management-web-app/
 ├── src/
 │   ├── app.js                    <- Entry point, Express setup
@@ -144,32 +148,25 @@ employee-management-web-app/
 │   │   ├── Employee.js
 │   │   ├── Department.js
 │   │   ├── Attendance.js
-│   │   └── User.js
+│   │   ├── Leave.js
+│   │   └── User.js               <- (Legacy)
 │   ├── controllers/
 │   │   ├── employeeController.js
 │   │   ├── departmentController.js
-│   │   └── attendanceController.js
+│   │   ├── attendanceController.js
+│   │   └── leaveController.js
 │   └── routes/
 │       ├── authRoutes.js
 │       ├── employeeRoutes.js
 │       ├── departmentRoutes.js
-│       └── attendanceRoutes.js
-├── views/                        <- EJS templates
-│   ├── landing.ejs
-│   ├── login.ejs
-│   ├── adminDashboard.ejs
-│   ├── employeeDashboard.ejs
-│   ├── dashboard.ejs
-│   ├── departments.ejs
-│   ├── attendance.ejs
-│   └── index.ejs
+│       ├── attendanceRoutes.js
+│       └── leaveRoutes.js
+├── views/                        <- EJS templates (login.ejs, adminDashboard.ejs...)
 ├── public/                       <- Static assets
 │   └── style.css
 ├── docs/
 ├── tests/
-├── createAdmin.js                <- Script to seed first Dean
-├── .env                          <- MONGO_URI, PORT (not committed)
-├── .gitignore
+├── createAdmin.js                <- Script to seed first user
 ├── package.json
 ├── report.md                     <- This file
 └── README.md
@@ -187,7 +184,7 @@ employee-management-web-app/
   email      : String   // Required, Unique
   phone      : String
   department : String
-  position   : String   // "Professor" | "Assistant Professor"
+  position   : String   // e.g. "Professor"
   salary     : Number
   joinDate   : Date     // Default: now
   role       : String   // Enum: 'dean' | 'hod' | 'faculty'
@@ -207,18 +204,22 @@ employee-management-web-app/
 {
   employeeId : ObjectId  // ref: 'Employee'
   date       : Date
-  status     : String    // Enum: 'Present' | 'Absent'
+  status     : String    // Enum: 'Present' | 'Late' | 'Absent'
 }
 ```
 
-### User *(unused / legacy)*
+### Leave
 ```js
 {
-  username : String
-  password : String
+  employeeId    : ObjectId  // ref: 'Employee'
+  startDate     : Date
+  endDate       : Date
+  reason        : String
+  type          : String    // e.g. 'Sick', 'Casual'
+  status        : String    // Enum: 'Pending' | 'Approved' | 'Rejected'
+  reviewComment : String
 }
 ```
-> Note: The `User` model appears to be unused. Authentication is handled via the `Employee` model directly.
 
 ---
 
@@ -229,10 +230,11 @@ employee-management-web-app/
 | Login | YES | YES | YES |
 | View own profile | YES | YES | YES |
 | View departments | YES | YES | YES |
-| View attendance | YES | YES | YES |
-| Mark attendance | NO | YES | YES |
+| View own attendance | YES | YES | YES |
+| Mark team attendance | NO | YES | YES |
+| Request Leave | YES | YES | YES |
+| Approve Leaves | NO | YES (own dept) | YES (all) |
 | Add Faculty | NO | YES (own dept only) | YES |
-| Add HOD | NO | NO | YES |
 | Update employee | NO | YES (own faculty) | YES |
 | Delete employee | NO | YES (own faculty) | YES |
 | Manage departments | NO | Partial | YES |
@@ -243,199 +245,117 @@ employee-management-web-app/
 
 ## 7. Existing Features
 
-### 7.1 Authentication
+### 7.1 Authentication & Security
 - **Login** — Employees sign in with `employeeId` and `password`
-- **Password Security** — Passwords are hashed using `bcrypt` (salt rounds: 10)
-- **Session Management** — `express-session` maintains login state
-- **Role-based Redirect** — Dean goes to `/dashboard/dean`, others go to `/dashboard/user`
-- **Logout** — Session destroyed on POST `/logout`
-- **Route Guards** — `ensureLoggedIn` and `canManage` middleware protect routes
+- **Password Security** — `bcrypt` hashing
+- **Change Password** — Dedicated feature for users to configure their own secure passwords post-interaction.
+- **Session Management** — Maintained login state via `express-session`
+- **Route Guards** — Strict `auth`, `deanOrHod`, `canManage` middlewares to prevent unauthorized access.
 
 ### 7.2 Employee Management
-- **Add Employee** — Full form with name, email, phone, department, position, salary, join date, role, password
-- **Auto ID Generation** — IDs auto-generated as `FAC001`, `HOD001`, `DEAN001` (role-prefixed, sequential)
-- **ID Preview** — Live preview of next ID via `GET /employees/next-id?role=faculty` (fetch API)
-- **Update Employee** — Inline edit fields within the employee table
-- **Delete Employee** — Delete by employee ID
-- **Search** — Search employees by name (case-insensitive regex)
-- **Pagination** — 5 employees per page
-- **CSV Export** — Download all employees as `employees.csv` via `json2csv`
-- **HOD Uniqueness** — Prevents adding a second HOD to the same department
+- **Add Employee** — Full form fields, ID auto-generated system (`FAC`, `DEAN`, `HOD` prefixes)
+- **Update / Delete** — Using secure endpoints and inline/table actions
+- **Search & Pagination** — Regex search and segmented multi-page lists
+- **Profile Detail View** — Granular detail expansion using profile routes
+- **CSV Export** — Complete system export of employee rows.
 
 ### 7.3 Department Management
-- **Add Department** — Create a new department by name (unique)
-- **Update Department** — Rename an existing department inline
-- **Delete Department** — Remove a department
-- **Add Member Modal** — Permission-aware modal to add an employee to a specific department
+- **Departments Config** — Create, modify, delete available departments.
+- **Member Assignment** — Strict HOD singleton per department checking algorithm. Add Member dedicated interface.
 
 ### 7.4 Attendance
-- **Mark Attendance** — Submit Employee ID + Date + Status (Present/Absent)
-- **View All Records** — Table of all attendance entries with employee name populated
-- **View by Employee** — Route exists at `GET /attendance/employee/:id` (view template missing)
+- **Mark Attendance** — HOD/Dean select Employee, Date, Status (Present/Late/Absent). Hard duplicate check on daily marking.
+- **My Attendance** — Detailed employee view isolating their records, counting late, missed and present logs.
+- **Employee Specific Tracking** — Comprehensive attendance listing.
 
-### 7.5 Dashboards
-- **Admin Dashboard** — Total Employees, Total Departments, Active Employees, Recent 5 employees
-- **Employee Dashboard** — Personal profile card with all info fields
-- **Quick Actions** — Links to Employees, Departments, Attendance, Export
+### 7.5 Leaves & Time Off
+- **Leave Requesting** — Form fields (type, reason, dates) mapping directly to custom Leave models.
+- **Approval Workflow** — Role-contextual listing of leaves, HOD reviews own department, Dean reviews all.
 
-### 7.6 UI & Design
-- Custom CSS design system (light theme, Inter font, indigo accent)
-- Responsive grid layouts
-- Animated stat cards with hover effects
-- Glassmorphic navbar with blur backdrop
-- Modal overlay for Add Member
-- Collapsible Add Employee form (accordion)
-- Paginated data table with inline edit
-- Search bar
-- Empty state displays
-- Animated page entrance effects
+### 7.6 Reporting & Compensation
+- **Salary Slips** — Real-time dynamic compilation mapping Base Salary and adjusting based on absent & late logs to output an authoritative net salary receipt.
+- **Dashboards** — Aggregation of metrics: Monthly attendance metrics, Department headcounts, Role splits powered by complex MongoDB Aggregations mapped to modern charting solutions.
 
 ---
 
 ## 8. API Routes Reference
 
-### Auth Routes (`/`)
-| Method | Path | Description | Access |
-|---|---|---|---|
-| GET | `/` | Landing page | Public |
-| GET | `/login` | Login form | Public |
-| POST | `/login` | Authenticate user | Public |
-| POST | `/logout` | Destroy session | Auth |
-| GET | `/dashboard/dean` | Admin dashboard | Dean only |
-| GET | `/dashboard/user` | Employee dashboard | Auth |
+*Key sub-routes included under typical root segments*
 
-### Employee Routes (`/employees`)
-| Method | Path | Description | Access |
-|---|---|---|---|
-| GET | `/employees` | Redirect to /departments | Auth |
-| GET | `/employees/next-id?role=` | Get next auto-ID | Auth |
-| POST | `/employees/add` | Add new employee | Dean / HOD |
-| POST | `/employees/update/:id` | Update employee | Dean / HOD |
-| GET | `/employees/delete/:id` | Delete employee | Dean / HOD |
-| GET | `/employees/export` | Download CSV | Auth |
-
-### Department Routes (`/departments`)
-| Method | Path | Description | Access |
-|---|---|---|---|
-| GET | `/departments` | List all departments | Auth |
-| POST | `/departments/add` | Create department | Auth |
-| POST | `/departments/update/:id` | Rename department | Auth |
-| GET | `/departments/delete/:id` | Delete department | Auth |
-
-### Attendance Routes (`/attendance`)
-| Method | Path | Description | Access |
-|---|---|---|---|
-| GET | `/attendance` | View all attendance | Auth |
-| POST | `/attendance/mark` | Mark attendance | Auth |
-| GET | `/attendance/employee/:id` | Employee attendance (view missing) | Auth |
+| Segment | Highlight Paths & Methods | Purpose |
+|---|---|---|
+| Auth (`/`) | `POST /login`, `POST /logout` | Authentication flows |
+| Pass (`/change-password`) | `GET`, `POST` | User credential updating |
+| D-Board (`/dashboard..`) | `/admin`, `/employee`, `/` | Segmented overview UIs |
+| Employees (`/employees`)| `GET /`, `POST /add`, `POST /update/:id`, `POST /delete/:id`, `GET /salary-slip/:id`, `GET /export` | Core CRUD + Output functionality. Protected endpoints. |
+| Depts (`/departments`) | `GET /`, `POST /add...` | Area configurations |
+| Attd (`/attendance`) | `GET /`, `POST /mark`, `GET /my-attendance`, `GET /employee/:id` | Status logging routes |
+| Leaves (`/leaves`) | `GET /`, `POST /request`, `POST /review/:id`, `POST /delete/:id` | Vacation & Sick logs |
 
 ---
 
 ## 9. UI Pages
 
-| Page | File | Route | Purpose |
-|---|---|---|---|
-| Landing | `landing.ejs` | `/` | Marketing page with features |
-| Login | `login.ejs` | `/login` | Authentication form |
-| Admin Dashboard | `adminDashboard.ejs` | `/dashboard/dean` | Stats + recent employees |
-| Employee Dashboard | `employeeDashboard.ejs` | `/dashboard/user` | Profile view |
-| General Dashboard | `dashboard.ejs` | `/employees/dashboard` | Basic stat view |
-| Employees | `index.ejs` | `/employees` | CRUD table + add form |
-| Departments | `departments.ejs` | `/departments` | Dept list + add member modal |
-| Attendance | `attendance.ejs` | `/attendance` | Mark + view records |
+| Key Components | Views mapped in `views/` directory |
+|---|---|
+| **Marketing & Setup** | `landing.ejs`, `login.ejs` |
+| **Dashboards** | `adminDashboard.ejs`, `employeeDashboard.ejs`, `dashboard.ejs` |
+| **People** | `index.ejs` (emp list), `employeeProfile.ejs`, `addMember.ejs` |
+| **Organization** | `departments.ejs`, `departmentMembers.ejs` |
+| **Operations** | `attendance.ejs`, `myAttendance.ejs`, `employeeAttendance.ejs`, `leaveList.ejs` |
+| **Finance & Account**| `salarySlip.ejs`, `changePassword.ejs` |
 
 ---
 
-## 10. Known Bugs
+## 10. Resolved Bugs
 
-| # | Severity | Bug | Location | Impact |
-|---|---|---|---|---|
-| 1 | HIGH | `getEmployeeDashboard` uses `Employee.findOne()` with no filter — returns a random employee, not the logged-in user | `employeeController.js:148` | Every employee sees wrong profile data |
-| 2 | HIGH | `markAttendance` stores raw `employeeId` string, but model expects an ObjectId ref — `.populate()` breaks | `attendanceController.js:11` | Attendance records don't display correctly |
-| 3 | MEDIUM | Faculty can visit `/employees` page (no guard on GET route) | `employeeRoutes.js:21` | Unauthorized data visibility |
-| 4 | MEDIUM | Delete uses `GET /employees/delete/:id` — insecure method | `employeeRoutes.js:25` | Data loss risk from crawlers |
-| 5 | LOW | No duplicate attendance check — same employee marked twice on same day | `attendanceController.js:9` | Data integrity issue |
+During the latest development cycles, major structural bugs were eliminated:
+
+| Status | Bug Addressed | Fix Implemented |
+|---|---|---|
+| ✅ FIXED | `getEmployeeDashboard` returning random employee | Modified to strictly query using logged `req.session.employee.employeeId` |
+| ✅ FIXED | Attendance ObjectId schema mismatch | Standardized the lookup workflow in `markAttendance` utilizing `Employee._id` references |
+| ✅ FIXED | Missing Route Guards on `GET /employees` | Wrapped in strict `deanOrHod` filter |
+| ✅ FIXED | Insecure Delete Methods | Migrated `GET` base deletions to pure `POST` actions preventing crawler wipes |
+| ✅ FIXED | Duplicate Attendance Marking | Enforced zero-time date start/end boundary evaluations blocking duplicate row entries |
 
 ---
 
-## 11. Suggested New Features
+## 11. Suggested New Features (Future Scope)
 
-### Easy (1–2 days each)
+### Intermediate Focus
+1. **Flash messages / toasts**: Move URL params (`?success=...`) to proper session-based flash messaging.
+2. **Bulk CSV Import**: Upload CSV to add many employees comprehensively at once.
+3. **Activity / Audit Log**: Record timeline logs of who added/changed/deleted items.
+4. **HOD ref in Department Schema**: Improve structure by placing HOD ObjectId direct inside Dept model limit.
+5. **Printable / PDF exports**: Browser CSS media query refinement for printing logs seamlessly.
 
-| # | Feature | Description |
-|---|---|---|
-| 1 | Fix all 5 bugs | Priority before any new feature |
-| 2 | `employeeAttendance.ejs` view | Route exists, just needs the template |
-| 3 | "Late" attendance status | Add 3rd option: Present / Late / Absent |
-| 4 | Flash messages / toasts | Replace `res.send("Error")` with styled alerts |
-| 5 | Filter by department/role | Extend search on employee list |
-| 6 | Sort table columns | Click column header to sort |
-| 7 | Attendance date range filter | Filter records between two dates |
-| 8 | Print / PDF attendance | Browser print CSS styled sheet |
-| 9 | Employee count on departments | Show member count badge |
-
-### Intermediate (2–5 days each)
-
-| # | Feature | Description |
-|---|---|---|
-| 10 | My Attendance page | Employee views their own attendance log |
-| 11 | Attendance % summary | Monthly present/absent % on employee dashboard |
-| 12 | Salary slip view | Printable formatted slip per employee per month |
-| 13 | Leave Management | Request, approve/reject — new Leave model |
-| 14 | Change Password | Employee changes own password post-login |
-| 15 | Bulk CSV Import | Upload CSV to add many employees at once |
-| 16 | Activity / Audit Log | Who added/changed/deleted what and when |
-| 17 | Department stats page | Members, HOD name, avg salary per dept |
-| 18 | HOD ref in Department schema | Store HOD ObjectId directly in Department |
-| 19 | Attendance pagination | Currently loads all records at once |
-
-### Advanced (1–2 weeks each)
-
-| # | Feature | Description |
-|---|---|---|
-| 20 | Chart.js Analytics Dashboard | Bar/pie charts — attendance rate, dept headcount, salary distribution |
-| 21 | In-app Notifications | Leave approvals, new member added alerts |
-| 22 | Email Notifications (Nodemailer) | Emails on account create, leave approval |
-| 23 | Monthly Payroll Report | Auto-compute salary x attendance days |
-| 24 | Performance Reviews | Dean/HOD submits annual review per employee |
-| 25 | REST API Layer | JSON endpoints for mobile or React front-end |
-| 26 | JWT Authentication | Replace sessions with stateless JWT tokens |
-| 27 | Two-Factor Auth (2FA) | OTP via email on login |
-| 28 | Dark / Light Mode Toggle | User preference saved in localStorage |
-| 29 | Mobile Sidebar Nav | Hamburger menu for small screens |
-| 30 | Role-based data isolation | Stricter per-role data filtering |
+### Advanced Capabilities
+6. **Mobile Sidebar Nav**: Off-canvas rendering mechanism for the menu systems.
+7. **Email Integrations (Nodemailer)**: Notifications on account creations, or leave approvals.
+8. **REST API Layer**: Standardizing raw JSON returning endpoints specifically for mobile app/React hooks integrations.
+9. **JWT Auth Layer**: Upgrading session cookies to scalable tokens.
+10. **Dark / Light Mode**: Configurable site-wide toggle.
 
 ---
 
 ## 12. Implementation Roadmap
 
-```
-PHASE 1 — Bug Fixes (This Week)
-  - Fix getEmployeeDashboard session bug
-  - Fix attendance ObjectId mismatch
-  - Guard /employees GET from Faculty
-  - Convert deletes to POST
-  - Add duplicate attendance check
+```text
+COMPLETE — Core App Stabilization
+  - Role-based Dashboard optimizations
+  - System bug flushing (Duplicate logs, Access layers, Queries)
+  - Full suite deployment of Salary Slips and My Attendance modules
+  - Core Leave integrations built (request & review schemas)
 
-PHASE 2 — Core Completeness (Week 2)
-  - Flash messages / toasts
-  - My Attendance page for employees
-  - Late attendance status
-  - Attendance date range filter
-  - Change password feature
+PHASE 3 — Process Smoothing (Upcoming)
+  - Replace URL parameter flashes with Session-driven flash plugins
+  - Advanced Table structures (Live Date filters, Data-tables library sorting)
 
-PHASE 3 — Analytics & Reports (Week 3-4)
-  - Chart.js on admin dashboard
-  - Attendance % summary per employee
-  - Department stats page
-  - Salary slip / payslip generation
-  - Monthly payroll report
-
-PHASE 4 — Advanced Features (Future)
-  - Leave management system
-  - Email notifications (Nodemailer)
-  - Performance reviews
-  - REST API + mobile support
+PHASE 4 — Notifications & Extensions (Future)
+  - Nodemailer dispatches
+  - Two-Factor Authentication via email OTP
+  - React/Mobile ready REST structures
 ```
 
 ---
@@ -444,14 +364,11 @@ PHASE 4 — Advanced Features (Future)
 
 | Metric | Count |
 |---|---|
-| Total Pages / Views | 8 |
-| API Routes | 16 |
-| Database Collections | 4 |
-| User Roles | 3 |
-| NPM Dependencies | 7 |
-| Known Bugs | 5 |
-| Existing Features | 25+ |
-| Suggested New Features | 30 |
+| **EJS Views** | 16 Components |
+| **Controllers** | 4 Entities |
+| **Registered DB Models** | 5 Configs |
+| **Primary Route Segments**| 6 Handlers |
+| **Outstanding Core Bugs** | 0 Major Blockers |
 
 ---
 
